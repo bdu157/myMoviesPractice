@@ -74,4 +74,9 @@ class MovieController {
             NSLog("Error saving managed object context:\(error)")
         }
     }
+    
+    func toggleSeenButton(for object: Movie) {
+        object.hasWatched = !object.hasWatched
+        self.saveToPersistentStore()
+    }
 }

@@ -11,6 +11,8 @@ import CoreData
 
 class MyMoviesTableViewController: UITableViewController, NSFetchedResultsControllerDelegate {
     
+    var movieController = MovieController()
+    
     lazy var fetchedResultsController: NSFetchedResultsController<Movie> = {
         let fetchRequest: NSFetchRequest<Movie> = Movie.fetchRequest()
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true), NSSortDescriptor(key: "hasWatched", ascending: true)]
@@ -46,6 +48,11 @@ class MyMoviesTableViewController: UITableViewController, NSFetchedResultsContro
         // #warning Incomplete implementation, return the number of sections
         return self.fetchedResultsController.sections?.count ?? 1
     }
+    
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        guard let section = self.fetchedResultsController.sections?[section] else {return nil}
+        return self.sectionName(for: section.name)
+    }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
@@ -55,7 +62,9 @@ class MyMoviesTableViewController: UITableViewController, NSFetchedResultsContro
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MyMovieCell", for: indexPath)
         let movie = self.fetchedResultsController.object(at: indexPath)
-        cell.textLabel?.text = movie.title
+        let customCell = cell as! MyMoviesTableViewCell
+        customCell.object = movie
+        customCell.movieController = self.movieController
         return cell
     }
 
@@ -104,6 +113,19 @@ class MyMoviesTableViewController: UITableViewController, NSFetchedResultsContro
     }
     */
 
+    //private methods
+    private func sectionName(for sectionName: String) -> String {
+        switch sectionName {
+        case "0":
+            return "NotWatched"
+        case "1":
+            return "Watched"
+        default:
+            return ""
+        }
+    }
+    
+    
     
     //MARK: - NSfetchresultcontrollerDelegate
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {

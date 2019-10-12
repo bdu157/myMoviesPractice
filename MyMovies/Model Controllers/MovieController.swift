@@ -7,8 +7,14 @@
 //
 
 import Foundation
+import CoreData
 
 class MovieController {
+    
+    // MARK: - Properties
+    
+    var searchedMovies: [MovieRepresentation] = []
+    
     
     private let apiKey = "4cc920dab8b729a619647ccc4d191d5e"
     private let baseURL = URL(string: "https://api.themoviedb.org/3/search/movie")!
@@ -52,7 +58,20 @@ class MovieController {
         }.resume()
     }
     
-    // MARK: - Properties
+    //create(add) movie to persistentStore from searchedMovies
     
-    var searchedMovies: [MovieRepresentation] = []
+    func addMovie(for movieRep: MovieRepresentation) {
+        let _ = Movie(title: movieRep.title)
+        self.saveToPersistentStore()
+    }
+    
+    //save persistentStore
+    func saveToPersistentStore() {
+        do {
+            let moc = CoreDataStack.shared.mainContext
+            try moc.save()
+        } catch {
+            NSLog("Error saving managed object context:\(error)")
+        }
+    }
 }

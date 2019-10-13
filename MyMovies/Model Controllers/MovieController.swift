@@ -55,13 +55,14 @@ class MovieController {
                 NSLog("Error decoding JSON data: \(error)")
                 completion(error)
             }
-        }.resume()
+            }.resume()
     }
     
     //create(add) movie to persistentStore from searchedMovies
     
     func addMovie(for movieRep: MovieRepresentation) {
-        let _ = Movie(title: movieRep.title)
+        let movie = Movie(title: movieRep.title)
+        self.put(for: movie)
         self.saveToPersistentStore()
     }
     
@@ -78,5 +79,41 @@ class MovieController {
     func toggleSeenButton(for object: Movie) {
         object.hasWatched = !object.hasWatched
         self.saveToPersistentStore()
+    }
+    
+    //MARK: Networking
+    //PUT
+    var baseURL2 = URL(string: "https://task-coredata.firebaseio.com/")!
+    
+    func put(for movie: Movie, completion:@escaping (Error?) -> Void = { _ in}) {
+        let identifier = movie.identifier?.uuidString
+        
+        let requestURL = baseURL2.appendingPathComponent(identifier!).appendingPathExtension("json")
+        
+        var request = URLRequest(url: requestURL)
+        
+        request.httpMethod = "PUT"
+        
+        let jsonEncoder = JSONEncoder()
+        
+        do {
+            guard let representation = movie.movieRepresenation else {
+                completion(NSError())
+                return
+            }
+            request.httpBody = try jsonEncoder.encode(representation)
+        } catch {
+            NSLog("error encoding movie: \(movie): \(error)")
+            completion(error)
+            return
+        }
+        URLSession.shared.dataTask(with: request) { (_, _, error) in
+            if let error = error {
+                NSLog("there is an error in PUTing movie to server:\(error)")
+                completion(error)
+                return
+            }
+            completion(nil)
+            }.resume()
     }
 }

@@ -15,10 +15,11 @@ class MovieController {
     
     var searchedMovies: [MovieRepresentation] = []
     
-    
     private let apiKey = "4cc920dab8b729a619647ccc4d191d5e"
     private let baseURL = URL(string: "https://api.themoviedb.org/3/search/movie")!
     
+    
+    //MARK: Networking for movies - Encoding
     func searchForMovie(with searchTerm: String, completion: @escaping (Error?) -> Void) {
         
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
@@ -58,38 +59,14 @@ class MovieController {
             }.resume()
     }
     
-    //create(add) movie to persistentStore from searchedMovies
-    
-    func addMovie(for movieRep: MovieRepresentation) {
-        let movie = Movie(title: movieRep.title)
-        self.put(for: movie)
-        self.saveToPersistentStore()
-    }
-    
-    //save persistentStore
-    func saveToPersistentStore() {
-        do {
-            let moc = CoreDataStack.shared.mainContext
-            try moc.save()
-        } catch {
-            NSLog("Error saving managed object context:\(error)")
-        }
-    }
-    
-    func toggleSeenButton(for object: Movie) {
-        object.hasWatched = !object.hasWatched
-        self.put(for: object)
-        self.saveToPersistentStore()
-    }
-    
     //MARK: Networking
     //PUT
     var baseURL2 = URL(string: "https://task-coredata.firebaseio.com/")!
     
     func put(for movie: Movie, completion:@escaping (Error?) -> Void = { _ in}) {
-        let identifier = movie.identifier?.uuidString
+        guard let identifier = movie.identifier?.uuidString else {return}
         
-        let requestURL = baseURL2.appendingPathComponent(identifier!).appendingPathExtension("json")
+        let requestURL = baseURL2.appendingPathComponent(identifier).appendingPathExtension("json")
         
         var request = URLRequest(url: requestURL)
         
@@ -117,4 +94,62 @@ class MovieController {
             completion(nil)
             }.resume()
     }
+    
+    //DELETE
+    func deleteMovieFromtheServer(for movie: Movie, completion:@escaping (Error?) -> Void = {_ in}) {
+        guard let identifier = movie.identifier?.uuidString else {return}
+        
+        let requestURL = baseURL2.appendingPathComponent(identifier).appendingPathExtension("json")
+        
+        var request = URLRequest(url: requestURL)
+        request.httpMethod = "DELETE"
+        
+        URLSession.shared.dataTask(with: request) { (_, _, error) in
+            if let error = error {
+                NSLog("there is an error in deleting :\(movie) - \(error)")
+                completion(error)
+                return
+            }
+            completion(nil)
+            }.resume()
+    }
+    
+    
+    //MARK: CRUD - create, read, update, delete
+    
+    //save persistentStore
+    func saveToPersistentStore() {
+        do {
+            let moc = CoreDataStack.shared.mainContext
+            try moc.save()
+        } catch {
+            NSLog("Error saving managed object context:\(error)")
+        }
+    }
+    
+    //Create
+    //create(add) movie to persistentStore from searchedMovies
+    
+    func addMovie(for movieRep: MovieRepresentation) {
+        let movie = Movie(title: movieRep.title)
+        self.put(for: movie)
+        self.saveToPersistentStore()
+    }
+    
+    //Update
+    func toggleSeenButton(for object: Movie) {
+        object.hasWatched = !object.hasWatched
+        self.put(for: object)
+        self.saveToPersistentStore()
+    }
+    
+    //Delete
+    func deleteMovie(for object: Movie) {
+        self.deleteMovieFromtheServer(for: object)
+        let moc = CoreDataStack.shared.mainContext
+        moc.delete(object)
+        
+        self.saveToPersistentStore()
+    }
+    
 }

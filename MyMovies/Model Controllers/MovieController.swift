@@ -78,6 +78,7 @@ class MovieController {
     
     func toggleSeenButton(for object: Movie) {
         object.hasWatched = !object.hasWatched
+        self.put(for: object)
         self.saveToPersistentStore()
     }
     
